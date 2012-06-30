@@ -1,4 +1,4 @@
-ZDClient v1.1 Readme
+ZDClient v1.2 Readme
 
 安装：
     在安装前，请用户先编辑运行脚本文件runzdclient，将其中的user和pass分别修改成您的帐号和密码并保存。 
@@ -23,13 +23,9 @@ ZDClient v1.1 Readme
     用户执行一次`runzdclient -l`，即可成功离线。 
 
 编译：
-    用户可通过svn获得最新的开发代码：
+    用户可通过git获得最新的开发代码：
 
-    svn checkout http://zdcclient.googlecode.com/svn/trunk/ zdcclient-read-only  
-
-    或者从项目主页下载版本代码包并自行解压。 
-
-        http://code.google.com/p/zdcclient/downloads/list
+    git clone http://github.com/isombyt/zdcclient.git  
 
     编译需要libpcap库，一般Linux发行版里面安装libpcap包即可，在ubuntu中，需要libpcap-dev：
 
@@ -74,8 +70,7 @@ DHCP模式：
 
 A PT Work. 
 
-项目主页： http://code.google.com/p/zdcclient/
+原项目主页： http://code.google.com/p/zdcclient/
 Blog:    http://apt-blog.co.cc
 GMail:   pentie@gmail.com
 
-2009-05-20 于广州大学城

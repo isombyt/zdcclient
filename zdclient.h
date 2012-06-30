@@ -3,15 +3,15 @@
  *
  *       Filename:  zdclient.h
  *
- *    Description:  
+ *    Description:
  *
  *        Version:  1.0
  *        Created:  06/06/2009 03:47:25 PM
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  YOUR NAME (), 
- *        Company:  
+ *         Author:  YOUR NAME (),
+ *        Company:
  *
  * =====================================================================================
  */
@@ -47,7 +47,7 @@
 #include "md5.h"
 
 /* ZDClient Version */
-#define ZDC_VER "0.12"
+#define ZDC_VER "0.13"
 
 /* default snap length (maximum bytes per packet to capture) */
 #define SNAP_LEN 1518
@@ -87,7 +87,8 @@ enum EAPType {
     EAP_RESPONSE_MD5_CHALLENGE,
     EAP_SUCCESS,
     EAP_FAILURE,
-    ERROR
+    ERROR,
+    EAP_REQUEST_MD5_KEEP_ALIVE=250
 };
 
 enum STATE {
@@ -100,7 +101,7 @@ enum STATE {
 void    send_eap_packet(enum EAPType send_type);
 void    show_usage();
 char*   get_md5_digest(const char* str, size_t len);
-void    action_by_eap_type(enum EAPType pType, 
+void    action_by_eap_type(enum EAPType pType,
                         const struct eap_header *header,
                         const struct pcap_pkthdr *packetinfo,
                         const uint8_t *packet);
@@ -111,6 +112,7 @@ void    init_device();
 void    init_arguments(int *argc, char ***argv);
 int     set_device_new_ip();
 void    fill_password_md5(uint8_t attach_key[], uint8_t eap_id);
+void    fill_uname_md5(uint8_t attach_key[], uint8_t eap_id);
 int     program_running_check();
 void    daemon_init(void);
 void    show_local_info();
@@ -120,7 +122,7 @@ int     code_convert(char *from_charset, char *to_charset,
 
 
 void
-get_packet(uint8_t *args, const struct pcap_pkthdr *header, 
+get_packet(uint8_t *args, const struct pcap_pkthdr *header,
     const uint8_t *packet);
 
 

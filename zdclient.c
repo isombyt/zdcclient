@@ -38,9 +38,9 @@ uint8_t      muticast_mac[] =            /* 802.1x的认证服务器多播地址
  *  用户信息的赋值变量，由init_argument函数初始化
  *-----------------------------------------------------------------------------*/
 int         dhcp_on = 0;               /* DHCP 模式标记 */
-int         background = 0;            /* 后台运行标记  */     
+int         background = 0;            /* 后台运行标记  */
 char        *dev = NULL;               /* 连接的设备名 */
-char        *username = NULL;          
+char        *username = NULL;
 char        *password = NULL;
 char        *user_gateway = NULL;      /* 由用户设定的四个报文参数 */
 char        *user_dns = NULL;
@@ -49,7 +49,7 @@ char        *user_mask = NULL;
 char        *client_ver = NULL;         /* 报文协议版本号 */
 int         exit_flag = 0;
 
-/* #####   GLOBLE VAR DEFINITIONS   ######################### 
+/* #####   GLOBLE VAR DEFINITIONS   #########################
  *-----------------------------------------------------------------------------
  *  报文相关信息变量，由init_info 、init_device函数初始化。
  *-----------------------------------------------------------------------------*/
@@ -71,10 +71,10 @@ uint8_t      eapol_start[18];            /* EAPOL START报文 */
 uint8_t      eapol_logoff[18];           /* EAPOL LogOff报文 */
 uint8_t      *eap_response_ident = NULL; /* EAP RESPON/IDENTITY报文 */
 uint8_t      *eap_response_md5ch = NULL; /* EAP RESPON/MD5 报文 */
-
+uint8_t      *eap_response_md5keep = NULL; /* EAP RESPON/MD5 报文 */
 
 // debug function
-void 
+void
 print_hex(uint8_t *array, int count)
 {
     int i;
@@ -137,20 +137,20 @@ show_usage()
 
             "\tZDC Client is a software developed individually, with NO any rela-\n"
             "\tiontship with Digital China company.\n\n\n"
-            
+
             "\tAnother PT work. Blog: http://apt-blog.co.cc\n"
             "\t\t\t\t\t\t\t\t2009.05.22\n",
             ZDC_VER);
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  get_md5_digest
  *  Description:  calcuate for md5 digest
  * =====================================================================================
  */
-char* 
+char*
 get_md5_digest(const char* str, size_t len)
 {
     static md5_byte_t digest[16];
@@ -163,14 +163,14 @@ get_md5_digest(const char* str, size_t len)
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  get_eap_type
  *  Description:  根据报文的动作位返回enum EAPType内定义的报文类型
  * =====================================================================================
  */
-enum EAPType 
-get_eap_type(const struct eap_header *eap_header) 
+enum EAPType
+get_eap_type(const struct eap_header *eap_header)
 {
     switch (eap_header->eap_t){
         case 0x01:
@@ -181,6 +181,8 @@ get_eap_type(const struct eap_header *eap_header)
                 return EAP_REQUEST_IDENTITY;
             if ( eap_header->eap_op == 0x04)
                 return EAP_REQUETS_MD5_CHALLENGE;
+            if ( eap_header->eap_op == 0xfa)
+                return EAP_REQUEST_MD5_KEEP_ALIVE;
 
             break;
         case 0x03:
@@ -192,21 +194,21 @@ get_eap_type(const struct eap_header *eap_header)
     }
     fprintf (stderr, "&&IMPORTANT: Unknown Package : eap_t:      %02x\n"
                     "                               eap_id: %02x\n"
-                    "                               eap_op:     %02x\n", 
+                    "                               eap_op:     %02x\n",
                     eap_header->eap_t, eap_header->eap_id,
                     eap_header->eap_op);
     return ERROR;
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  action_by_eap_type
  *  Description:  根据eap报文的类型完成相关的应答
  * =====================================================================================
  */
-void 
-action_by_eap_type(enum EAPType pType, 
+void
+action_by_eap_type(enum EAPType pType,
                         const struct eap_header *header,
                         const struct pcap_pkthdr *packetinfo,
                         const uint8_t *packet) {
@@ -265,19 +267,24 @@ action_by_eap_type(enum EAPType pType,
 
             send_eap_packet(EAP_RESPONSE_IDENTITY_KEEP_ALIVE);
             break;
+        case EAP_REQUEST_MD5_KEEP_ALIVE:
+            fprintf(stdout, ">>Protocol: REQUEST ZD Private KEEP MD5(USERNAME)\n");
+            fill_uname_md5((uint8_t*)header->eap_md5_challenge-1, header->eap_id);
+            send_eap_packet(EAP_REQUEST_MD5_KEEP_ALIVE);
+            break;
         default:
             return;
     }
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  send_eap_packet
  *  Description:  根据eap类型发送相应数据包
  * =====================================================================================
  */
-void 
+void
 send_eap_packet(enum EAPType send_type)
 {
     uint8_t *frame_data;
@@ -318,6 +325,10 @@ send_eap_packet(enum EAPType send_type)
             }
             fprintf(stdout, ">>Protocol: SEND EAP_RESPONSE_IDENTITY_KEEP_ALIVE\n");
             break;
+        case EAP_REQUEST_MD5_KEEP_ALIVE:
+            frame_data = eap_response_keep;
+            frame_length = 14 + 9 + 16 + 46;
+            break;
         default:
             fprintf(stderr,"&&IMPORTANT: Wrong Send Request Type.%02x\n", send_type);
             return;
@@ -330,14 +341,14 @@ send_eap_packet(enum EAPType send_type)
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  get_packet
  *  Description:  pcap的回呼函数，当收到EAPOL报文时自动被调用
  * =====================================================================================
  */
 void
-get_packet(uint8_t *args, const struct pcap_pkthdr *header, 
+get_packet(uint8_t *args, const struct pcap_pkthdr *header,
     const uint8_t *packet)
 {
 	/* declare pointers to packet headers */
@@ -353,13 +364,13 @@ get_packet(uint8_t *args, const struct pcap_pkthdr *header,
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  init_frames
  *  Description:  初始化发送帧的数据
  * =====================================================================================
  */
-void 
+void
 init_frames()
 {
     int data_index;
@@ -370,7 +381,7 @@ init_frames()
     memcpy (eth->ether_dhost, muticast_mac, 6);
     memcpy (eth->ether_shost, local_mac, 6);
     eth->ether_type =  htons (0x888e);
-    
+
     /**** EAPol START ****/
     uint8_t start_data[4] = {0x01, 0x01, 0x00, 0x00};
     memcpy (eapol_start, eapol_eth_header, 14);
@@ -386,9 +397,9 @@ init_frames()
 
     local_info_tailer[0] = dhcp_on;
 
-    struct dcba_tailer *dcba_info_tailer = 
+    struct dcba_tailer *dcba_info_tailer =
                 (struct dcba_tailer *)(local_info_tailer + 1);
-    
+
     dcba_info_tailer->local_ip          = local_ip;
     dcba_info_tailer->local_mask        = local_mask;
     dcba_info_tailer->local_gateway     = local_gateway;
@@ -402,12 +413,12 @@ init_frames()
 //    print_hex (local_info_tailer, 46);
 
     /* EAP RESPONSE IDENTITY */
-    uint8_t eap_resp_iden_head[9] = {0x01, 0x00, 
+    uint8_t eap_resp_iden_head[9] = {0x01, 0x00,
                                     0x00, 5 + 46 + username_length,  /* eapol_length */
-                                    0x02, 0x01, 
+                                    0x02, 0x01,
                                     0x00, 5 + username_length,       /* eap_length */
                                     0x01};
-    
+
     eap_response_ident = malloc (14 + 9 + username_length + 46);
     memset (eap_response_ident, 0, 14 + 9 + username_length + 46);
 
@@ -423,9 +434,9 @@ init_frames()
 //    print_hex (eap_response_ident, 14 + 9 + username_length + 46);
 
     /** EAP RESPONSE MD5 Challenge **/
-    uint8_t eap_resp_md5_head[10] = {0x01, 0x00, 
+    uint8_t eap_resp_md5_head[10] = {0x01, 0x00,
                                    0x00, 6 + 16 + username_length + 46, /* eapol-length */
-                                   0x02, 0x02, 
+                                   0x02, 0x02,
                                    0x00, 6 + 16 + username_length, /* eap-length */
                                    0x04, 0x10};
     eap_response_md5ch = malloc (14 + 4 + 6 + 16 + username_length + 46);
@@ -434,15 +445,31 @@ init_frames()
     memcpy (eap_response_md5ch + data_index, eapol_eth_header, 14);
     data_index += 14;
     memcpy (eap_response_md5ch + data_index, eap_resp_md5_head, 10);
-    data_index += 26;// 剩余16位在收到REQ/MD5报文后由fill_password_md5填充 
+    data_index += 26;// 剩余16位在收到REQ/MD5报文后由fill_password_md5填充
     memcpy (eap_response_md5ch + data_index, username, username_length);
     data_index += username_length;
     memcpy (eap_response_md5ch + data_index, local_info_tailer, 46);
 
+    /** EAP RESPONSE MD5 Keep Alive **/
+    uint8_t eap_resp_md5keep_head[9] = {0x01, 0x00,
+                                   0x00, 5 + 16 + 33, /* eapol-length */
+                                   0x02, 0xff,
+                                   0x00, 5 + 16, /* eap-length */
+                                   0xfa};
+    eap_response_md5keep = malloc (14 + 4 + 5 + 16 + 46);
+
+
+    data_index = 0;
+    memcpy (eap_response_md5keep + data_index, eapol_eth_header, 14);
+    data_index += 14;
+    memcpy (eap_response_md5keep + data_index, eap_resp_md5keep_head, 9);
+    data_index += 25;// 剩余16位在收到REQ/MD5报文后由fill_keey_md5填充
+    memcpy (eap_response_md5keep + data_index, local_info_tailer, 46);
+
 //    print_hex (eap_response_md5ch, 14 + 4 + 6 + 16 + username_length + 46);
 }
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  fill_password_md5
  *  Description:  给RESPONSE_MD5_Challenge报文填充相应的MD5值。
@@ -450,10 +477,10 @@ init_frames()
  *  其中的Key
  * =====================================================================================
  */
-void 
+void
 fill_password_md5(uint8_t attach_key[], uint8_t eap_id)
 {
-    char *psw_key; 
+    char *psw_key;
     char *md5;
 
     psw_key = malloc(1 + password_length + 16);
@@ -467,8 +494,33 @@ fill_password_md5(uint8_t attach_key[], uint8_t eap_id)
     free (psw_key);
 }
 
+/*
+ * ===  FUNCTION  ======================================================================
+ *         Name:  fill_uname_md5
+ *  Description:  给RESPONSE_MD5_KEEP_ALIVE报文填充相应的MD5值。
+ *  只会在接受到REQUEST_MD5_KEEP_ALIVE报文之后才进行，因为需要
+ *  其中的Key
+ * =====================================================================================
+ */
+void
+fill_uname_md5(uint8_t attach_key[], uint8_t eap_id)
+{
+    char *uname_key;
+    char *md5;
 
-/* 
+    uname_key = malloc(username_length + 4);
+    memcpy (uname_key, username, username_length);
+    memcpy (uname_key + username_length, attach_key, 4);
+
+    md5 = get_md5_digest(uname_key,username_length + 4);
+    eap_response_md5keep[14+5]=eap_id;
+    memcpy (eap_response_md5keep + 13 + 10, md5, 16);
+
+    free (uname_key);
+}
+
+
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  init_info
  *  Description:  初始化本地信息。
@@ -486,17 +538,17 @@ void init_info()
 
     if (user_ip)
         local_ip = inet_addr (user_ip);
-    else 
+    else
         local_ip = 0;
 
     if (user_mask)
         local_mask = inet_addr (user_mask);
-    else 
+    else
         local_mask = 0;
 
     if (user_gateway)
         local_gateway = inet_addr (user_gateway);
-    else 
+    else
         local_gateway = 0;
 
     if (user_dns)
@@ -522,7 +574,7 @@ void init_info()
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  init_device
  *  Description:  初始化设备。主要是找到打开网卡、获取网卡MAC、IP，
@@ -554,7 +606,7 @@ void init_device()
 			errbuf);
 		exit(EXIT_FAILURE);
     }
-	
+
 	/* open capture device */
 	handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
 
@@ -603,7 +655,7 @@ void init_device()
 
     /* construct the filter string */
     sprintf(filter_exp, "ether dst %02x:%02x:%02x:%02x:%02x:%02x"
-                        " and ether proto 0x888e", 
+                        " and ether proto 0x888e",
                         local_mac[0], local_mac[1],
                         local_mac[2], local_mac[3],
                         local_mac[4], local_mac[5]);
@@ -626,7 +678,7 @@ void init_device()
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  set_device_new_ip
  *  Description:  用于DHCP模式下，当成功验证后并收到服务器发来的保鲜报文，
@@ -637,7 +689,7 @@ void init_device()
 //{
 //    struct ifreq ifr;
 //    int sock;
-//    
+//
 //    strcpy(ifr.ifr_name, dev);
 //    if((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 //    {
@@ -663,13 +715,13 @@ void init_device()
 //}
 //
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  code_convert
  *  Description:  字符串编码转换
  * =====================================================================================
  */
-int 
+int
 code_convert(char *from_charset, char *to_charset,
              char *inbuf, size_t inlen, char *outbuf, size_t outlen)
 {
@@ -677,29 +729,29 @@ code_convert(char *from_charset, char *to_charset,
 
     cd = iconv_open(to_charset,from_charset);
 
-    if (cd==0) 
+    if (cd==0)
       return -1;
     memset(outbuf,0,outlen);
 
-    if (iconv (cd, &inbuf, &inlen, &outbuf, &outlen)==-1) 
+    if (iconv (cd, &inbuf, &inlen, &outbuf, &outlen)==-1)
       return -1;
     iconv_close(cd);
     return 0;
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  print_server_info
  *  Description:  提取中文信息并打印输出
  * =====================================================================================
  */
 
-void 
+void
 print_server_info (const uint8_t *packet, uint16_t packetlength)
 {
     const uint8_t *str;
-    
+
     {
         if ( *(packet + 0x2A) == 0x12) {
             str = (packet + 0x2B);
@@ -734,7 +786,7 @@ print_server_info (const uint8_t *packet, uint16_t packetlength)
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  show_local_info
  *  Description:  显示信息
@@ -757,7 +809,7 @@ void show_local_info ()
 }
 
 
-/* 
+/*
  * ===  FUNCTION  ======================================================================
  *         Name:  init_arguments
  *  Description:  初始化和解释命令行的字符串。getopt_long
@@ -836,7 +888,7 @@ void init_arguments(int *argc, char ***argv)
                 fprintf (stderr,"Unknown option character `\\x%x'.\n", c);
                 exit(EXIT_FAILURE);
         }
-    }    
+    }
 }
 
 #ifndef __linux
@@ -863,7 +915,7 @@ static int bsd_get_mac(const char ifname[], uint8_t eth_addr[])
         do
         {
             struct sockaddr *sa=&ifrp->ifr_addr;
-            
+
             if(((struct sockaddr_dl *)sa)->sdl_type==IFT_ETHER) {
                 if (strcmp(ifname, ifrp->ifr_name) == 0){
                     memcpy (eth_addr, LLADDR((struct sockaddr_dl *)&ifrp->ifr_addr), 6);

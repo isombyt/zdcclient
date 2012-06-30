@@ -1,0 +1,8 @@
+
+
+
+山寨版的神州数码802.1x认证supplicant，基于pcap库的C语言的跨平台的原生客户端。
+原项目地址：https://code.google.com/p/zdcclient/
+原开发者：Pentie、michael8090、zhhtc200、zhouJFu
+
+由于原开发者现已离校，由Pentie授权fork至github，继续维护

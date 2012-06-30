@@ -120,8 +120,9 @@ show_usage()
             "\t-b, --background      Program fork to background after authentication.\n\n"
 
             "\t--ver                 Specify a client version. \n"
-            "\t                      Default is `3.5.04.1110fk'.\n"
-            "\t                      Other known versions are:\n"
+            "\t                      Default is .\n"
+            "\t                      Other known versions are:3.5.05.0617fk\n"
+            "\t                      `3.5.04.1110fk',
             "\t                      `3.5.04.1013fk', `3.5.04.0324', \n"
             "\t                      `3.4.2006.1027', `3.4.2006.1229', \n"
             "\t                      `3.4.2006.0220'\n"
@@ -563,7 +564,7 @@ void init_info()
     }
 
     if(client_ver == NULL)
-        client_ver = "3.5.04.1110fk";
+        client_ver = "3.5.05.0617fk";
     else{
         if (strlen (client_ver) > 13) {
             fprintf (stderr, "Error: Specified client version `%s' longer than 13 Bytes.\n"

@@ -1,0 +1,35 @@
+#!/bin/bash
+#用户名
+USERNAME='user'
+
+#密码
+PASSWORD='pass'
+
+#其他参数(如--dev指定网卡，可运行zdclient -h查看详细参数)
+ARGS=(--dhcp -b)
+
+#---------------------------------------------------------------------
+LOGFILE=/tmp/zdclient.log
+
+echo Beginning Authentication...
+
+zdclient $@ ${ARGS[@]} -u $USERNAME -p $PASSWORD 2>&1|tee -i "$LOGFILE"
+
+program_err=`sed -n -e '/^@@ERROR/p' $LOGFILE`
+server_info=`sed -n -e '/^>>Server/p' $LOGFILE`
+
+notify(){
+    notify-send "神州数码" "$1";
+    if [ $? -eq 127 ]; then
+        echo "\`notify-send' not installed."
+        echo "$1"
+    fi
+}
+
+for msg in "$program_err" "$server_info"; do
+    if [[ $msg ]]; then
+        notify "${msg##>>}"
+    fi
+done
+
+

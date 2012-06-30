@@ -1,0 +1,25 @@
+CC = gcc
+LIBS = /usr/lib/libpcap.a -liconv
+CFLAGS = -Wall -g -O2
+INC_DIR=/usr/local/include
+LINK_DIR=/usr/local/lib
+
+OBJ  = main.o md5.o zdclient.o 
+.PHONY: all
+
+all: zdclient
+
+zdclient: $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LIBS) -I$(INC_DIR) -L$(LINK_DIR)
+
+main.o : main.c
+	$(CC) $(CFLAGS) -c $< -I$(INC_DIR)
+
+md5.o	: md5.c md5.h
+	$(CC) $(CFLAGS) -c $< -I$(INC_DIR)
+
+zdclient.o : zdclient.c
+	$(CC) $(CFLAGS) -c $< -I$(INC_DIR)
+	
+clean :
+	rm -v $(OBJ) zdclient

@@ -1,0 +1,28 @@
+#!/bin/bash
+INSTALL_PATH=/usr/bin
+
+if [ `id -u` -ne 0 ]
+then
+    echo "Need to be ROOT to run install."
+    exit 1
+fi
+
+if [ $# -eq 1 ]
+then
+    INSTALL_PATH=$1
+fi
+
+if [[ -e 'zdclient' && -e 'runzdclient' ]]
+then
+    echo $'\n#### Files intalling to '$INSTALL_PATH$' ####\n'
+    install -v -m 4755 -o root zdclient $INSTALL_PATH
+    install -v -m 0755 -o root runzdclient $INSTALL_PATH
+    echo $'\n#### Installation Done. ####\n'
+else
+    echo $'\n#### Execute files `zdclient\' or `runzdclient\' NOT Found. ####\n'
+    echo $'     Did you forget `make\'?\n\n'
+    exit 1
+fi
+
+exit 0
+

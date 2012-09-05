@@ -122,7 +122,7 @@ show_usage()
             "\t--ver                 Specify a client version. \n"
             "\t                      Default is .\n"
             "\t                      Other known versions are:3.5.05.0617fk\n"
-            "\t                      `3.5.04.1110fk',
+            "\t                      `3.5.04.1110fk',"
             "\t                      `3.5.04.1013fk', `3.5.04.0324', \n"
             "\t                      `3.4.2006.1027', `3.4.2006.1229', \n"
             "\t                      `3.4.2006.0220'\n"
@@ -327,7 +327,7 @@ send_eap_packet(enum EAPType send_type)
             fprintf(stdout, ">>Protocol: SEND EAP_RESPONSE_IDENTITY_KEEP_ALIVE\n");
             break;
         case EAP_REQUEST_MD5_KEEP_ALIVE:
-            frame_data = eap_response_keep;
+            frame_data = eap_response_md5keep;
             frame_length = 14 + 9 + 16 + 46;
             break;
         default:

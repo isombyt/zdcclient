@@ -1,7 +1,7 @@
 TARGET = zdclient
 BIN_DIR = /usr/bin/
 INCLUDES = 
-LIBS = /usr/lib/libpcap.a
+LIBS = -lpcap
 
 C_SOURCES       = $(wildcard *.c)
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))

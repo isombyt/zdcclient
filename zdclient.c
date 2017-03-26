@@ -601,6 +601,13 @@ void init_device()
         dev = alldevs->name;
         strcpy (dev_if_name, dev);
     }
+	else
+	  for(alldevs;alldevs;alldevs=alldevs->next)
+		if (strcmp(alldevs->name,dev)==0)
+		{
+	        strcpy (dev_if_name, dev);
+			break;
+		}
 
 	if (dev == NULL) {
 		fprintf(stderr, "Couldn't find default device: %s\n",
@@ -629,6 +636,9 @@ void init_device()
             local_mask = ((struct sockaddr_in *)addrs->netmask)->sin_addr.s_addr;
         }
     }
+
+	
+
 #ifdef __linux
     /* get device basic infomation */
     struct ifreq ifr;

@@ -87,7 +87,7 @@ enum EAPType {
     EAP_RESPONSE_MD5_CHALLENGE,
     EAP_SUCCESS,
     EAP_FAILURE,
-    ERROR,
+   	ERROR,
     EAP_REQUEST_MD5_KEEP_ALIVE=250
 };
 
@@ -124,5 +124,3 @@ int     code_convert(char *from_charset, char *to_charset,
 void
 get_packet(uint8_t *args, const struct pcap_pkthdr *header,
     const uint8_t *packet);
-
-

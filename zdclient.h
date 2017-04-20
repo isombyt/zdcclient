@@ -47,7 +47,7 @@
 #include "md5.h"
 
 /* ZDClient Version */
-#define ZDC_VER "0.13"
+#define ZDC_VER "0.16"
 
 /* default snap length (maximum bytes per packet to capture) */
 #define SNAP_LEN 1518
@@ -87,7 +87,7 @@ enum EAPType {
     EAP_RESPONSE_MD5_CHALLENGE,
     EAP_SUCCESS,
     EAP_FAILURE,
-    ERROR,
+   	ERROR,
     EAP_REQUEST_MD5_KEEP_ALIVE=250
 };
 
@@ -124,5 +124,3 @@ int     code_convert(char *from_charset, char *to_charset,
 void
 get_packet(uint8_t *args, const struct pcap_pkthdr *header,
     const uint8_t *packet);
-
-

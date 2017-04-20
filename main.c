@@ -104,6 +104,8 @@ program_running_check()
             if ( kill (fl.l_pid, SIGINT) == -1 )
                 perror("kill");
             fprintf (stdout, "&&Info: Kill Signal Sent to PID %d.\n", fl.l_pid);
+			if (!remove(LOCKFILE))
+			  fprintf(stdout,"&&Info: LOCKFILE delete failed,please remove it: %s",LOCKFILE);
         }
         else 
             fprintf (stderr, "&&Info: NO ZDClient Running.\n");
